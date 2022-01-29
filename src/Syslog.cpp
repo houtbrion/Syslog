@@ -50,16 +50,35 @@ void Syslog::UnsetFile(void) {
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
-void Syslog::SetSerial(HARDWARE_SERIAL_TYPE *serial) {
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
+void Syslog::SetSerial(HardwareSerial *serial) {
   this->channel.hSerial=serial;
-  this->use_serial=1;
+  this->use_serial=TYPE_HARDWARE_SERIAL;
 }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+void Syslog::SetSerial(Serial_ *serial) {
+  this->channel._Serial=serial;
+  this->use_serial=TYPE_USB_SERIAL;
+}
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+void Syslog::SetSerial(Uart *serial) {
+  this->channel.uSerial=serial;
+  this->use_serial=TYPE_UART_SERIAL;
+}
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+
+
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
 void Syslog::SetSerial(SoftwareSerial *serial) {
   this->channel.sSerial=serial;
-  this->use_serial=2;
+  this->use_serial=TYPE_SOFTWARE_SERIAL;
 }
 #endif /* USE_SOFTWARE_SERIAL */
 
@@ -263,7 +282,7 @@ bool Syslog::SetNTP(NTPClient *client, uint8_t format) {
 // Private Methods /////////////////////////////////////////////////////////////
 #ifdef USE_RTC
 String Syslog::dateString(void) {
-  rtc_date_t date;
+  date_t date;
   this->rtc->getTime(&date);
   String result;
   if (this->time_format==DATE_TIME) {
@@ -370,9 +389,6 @@ bool Syslog::_sendProtocol(uint16_t pri, const char *message) {
   }
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->_client->print(this->dateString(&currentTime));
   this->_client->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -394,9 +410,6 @@ bool Syslog::_sendProtocol(uint16_t pri, const char *message) {
 void Syslog::_sendFile(uint16_t pri, const char *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->logFile->print(this->dateString(&currentTime));
   this->logFile->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -419,12 +432,10 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
 void Syslog::_sendHardSerial(uint16_t pri, const char *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->channel.hSerial->print(this->dateString(&currentTime));
   this->channel.hSerial->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -443,15 +454,61 @@ void Syslog::_sendHardSerial(uint16_t pri, const char *message) {
   this->channel.hSerial->print(' ');
   this->channel.hSerial->println(message);
 }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+void Syslog::_sendUsbSerial(uint16_t pri, const char *message) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+  this->channel._Serial->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+  this->channel._Serial->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+  this->channel._Serial->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+  this->channel._Serial->print(' ');
+#endif /* OUTPUT_TIME */
+  this->channel._Serial->print(priorityString(pri));
+  this->channel._Serial->print(' ');
+  this->channel._Serial->print(this->_deviceHostname);
+  this->channel._Serial->print(' ');
+  this->channel._Serial->print(this->_appName);
+  this->channel._Serial->print(' ');
+  this->channel._Serial->println(message);
+}
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+  this->channel._Serial->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+  this->channel.uSerial->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+  this->channel.uSerial->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+  this->channel._Serial->print(' ');
+#endif /* OUTPUT_TIME */
+  this->channel.uSerial->print(priorityString(pri));
+  this->channel.uSerial->print(' ');
+  this->channel.uSerial->print(this->_deviceHostname);
+  this->channel.uSerial->print(' ');
+  this->channel.uSerial->print(this->_appName);
+  this->channel.uSerial->print(' ');
+  this->channel.uSerial->println(message);
+}
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
 void Syslog::_sendSoftSerial(uint16_t pri, const char *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->channel.hSerial->print(this->dateString(&currentTime));
   this->channel.sSerial->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -500,13 +557,28 @@ inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
-  if (1==this->use_serial) {
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
+  if (TYPE_HARDWARE_SERIAL==this->use_serial) {
     this->_sendHardSerial(pri, message);
   }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+  if (TYPE_USB_SERIAL==this->use_serial) {
+    this->_sendUsbSerial(pri, message);
+  }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+  if (TYPE_UART_SERIAL==this->use_serial) {
+    this->_sendUartSerial(pri, message);
+  }
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
-  if (2==this->use_serial) {
+  if (TYPE_SOFTWARE_SERIAL==this->use_serial) {
     this->_sendSoftSerial(pri, message);
   }
 #endif /* USE_SOFTWARE_SERIAL */
@@ -545,9 +617,6 @@ bool Syslog::_sendProtocol(uint16_t pri, const __FlashStringHelper *message) {
   }
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->_client->print(this->dateString(&currentTime));
   this->_client->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -570,9 +639,6 @@ bool Syslog::_sendProtocol(uint16_t pri, const __FlashStringHelper *message) {
 void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->logFile->print(this->dateString(&currentTime));
   this->logFile->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -595,12 +661,10 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
 void Syslog::_sendHardSerial(uint16_t pri, const __FlashStringHelper *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->channel.hSerial->print(this->dateString(&currentTime));
   this->channel.hSerial->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -619,15 +683,61 @@ void Syslog::_sendHardSerial(uint16_t pri, const __FlashStringHelper *message) {
   this->channel.hSerial->print(' ');
   this->channel.hSerial->println(message);
 }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+void Syslog::_sendUsbSerial(uint16_t pri, const __FlashStringHelper *message) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+  this->channel._Serial->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+  this->channel._Serial->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+  this->channel._Serial->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+  this->channel._Serial->print(' ');
+#endif /* OUTPUT_TIME */
+  this->channel._Serial->print(priorityString(pri));
+  this->channel._Serial->print(' ');
+  this->channel._Serial->print(this->_deviceHostname);
+  this->channel._Serial->print(' ');
+  this->channel._Serial->print(this->_appName);
+  this->channel._Serial->print(' ');
+  this->channel._Serial->println(message);
+}
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+  this->channel._Serial->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+  this->channel.uSerial->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+  this->channel.uSerial->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+  this->channel._Serial->print(' ');
+#endif /* OUTPUT_TIME */
+  this->channel.uSerial->print(priorityString(pri));
+  this->channel.uSerial->print(' ');
+  this->channel.uSerial->print(this->_deviceHostname);
+  this->channel.uSerial->print(' ');
+  this->channel.uSerial->print(this->_appName);
+  this->channel.uSerial->print(' ');
+  this->channel.uSerial->println(message);
+}
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
 void Syslog::_sendSoftSerial(uint16_t pri, const __FlashStringHelper *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  //rtc_date_t currentTime;
-  //this->rtc->getTime(&currentTime);
-  //this->channel.sSerial->print(this->dateString(&currentTime));
   this->channel.sSerial->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
@@ -676,13 +786,28 @@ inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
-  if (1==this->use_serial) {
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
+  if (TYPE_HARDWARE_SERIAL==this->use_serial) {
     this->_sendHardSerial(pri, message);
   }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+  if (TYPE_USB_SERIAL==this->use_serial) {
+    this->_sendUsbSerial(pri, message);
+  }
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+  if (TYPE_UART_SERIAL==this->use_serial) {
+    this->_sendUartSerial(pri, message);
+  }
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
-  if (2==this->use_serial) {
+  if (TYPE_SOFTWARE_SERIAL==this->use_serial) {
     this->_sendSoftSerial(pri, message);
   }
 #endif /* USE_SOFTWARE_SERIAL */

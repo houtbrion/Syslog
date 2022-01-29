@@ -113,11 +113,27 @@
 #define EPOCH_TIME 0  /* unix epoch time */
 #define DATE_TIME  1  /* date format */
 
+#define TYPE_HARDWARE_SERIAL 1
+#define TYPE_USB_SERIAL      2
+#define TYPE_UART_SERIAL     3
+#define TYPE_SOFTWARE_SERIAL 4
+
 #ifdef USE_SERIAL
 union Channel {
 #ifdef USE_HARDWARE_SERIAL
-  HARDWARE_SERIAL_TYPE *hSerial;
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
+  HardwareSerial    *hSerial;
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+  Serial_   *_Serial;
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+  Uart   *uSerial;
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif
+
 #ifdef USE_SOFTWARE_SERIAL
   SoftwareSerial *sSerial;
 #endif
@@ -157,9 +173,20 @@ class Syslog {
     void _sendFile(uint16_t pri, const char *message);
     void _sendFile(uint16_t pri, const __FlashStringHelper *message);
 #endif /* USE_FILE */
+
 #ifdef USE_HARDWARE_SERIAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
     void _sendHardSerial(uint16_t pri, const char *message);
     void _sendHardSerial(uint16_t pri, const __FlashStringHelper *message);
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+    void _sendUsbSerial(uint16_t pri, const char *message);
+    void _sendUsbSerial(uint16_t pri, const __FlashStringHelper *message);
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+    void _sendUartSerial(uint16_t pri, const char *message);
+    void _sendUartSerial(uint16_t pri, const __FlashStringHelper *message);
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif /* USE_HARDWARE_SERIAL */
 #ifdef USE_SOFTWARE_SERIAL
     void _sendSoftSerial(uint16_t pri, const char *message);
@@ -178,7 +205,9 @@ class Syslog {
 #if defined(USE_RTC) || defined(USE_NTP)
     uint8_t time_format;
 #endif /* USE_RTC || USE_NTP */
-
+#ifdef USE_NTP
+    String dateNtpString(void);
+#endif /* USE_NTP */
 
   public:
     Syslog(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
@@ -194,7 +223,15 @@ class Syslog {
     void UnsetFile(void);
 #endif /* USE_FILE */
 #ifdef USE_HARDWARE_SERIAL
-    void SetSerial(HARDWARE_SERIAL_TYPE *serial);
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
+    void SetSerial(HardwareSerial *serial);
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+    void SetSerial(Serial_ *serial);
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
+    void SetSerial(Uart *serial);
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #endif /* USE_HARDWARE_SERIAL */
 #ifdef USE_SOFTWARE_SERIAL
     void SetSerial(SoftwareSerial *serial);
@@ -234,7 +271,6 @@ class Syslog {
 #endif /* USE_RTC */
 #ifdef USE_NTP
     bool SetNTP(NTPClient *client, uint8_t format);
-    String dateNtpString(void);
 #endif /* USE_NTP */
 };
 
