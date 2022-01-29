@@ -6,3 +6,7 @@ CMakeListsPrivate.txt
 /cmake-build-debug
 /lib
 /platformio.ini
+
+# vim
+*~
+*.swp

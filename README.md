@@ -1,5 +1,85 @@
 # Syslog
 
+
+https://github.com/arcao/Syslog
+
+#define USE_NETWORK
+//#define USE_FILE
+#define USE_HARDWARE_SERIAL
+//#define USE_SOFTWARE_SERIAL
+
+#define OUTPUT_TIME
+//#define USE_RTC
+#define USE_NTP
+
+
+#include <NTPClient.h>
+#include <dateUtils.h>
+#include <RTC_U.h>
+#include <SoftwareSerial.h>
+
+    Syslog(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
+    void SetLogInfo(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
+#ifdef USE_NETWORK
+    void SetProtocol(UDP &client, uint8_t protocol = SYSLOG_PROTO_IETF);
+    void SetProtocol(UDP &client, const char* server, uint16_t port, uint8_t protocol = SYSLOG_PROTO_IETF);
+    void SetProtocol(UDP &client, IPAddress ip, uint16_t port, uint8_t protocol = SYSLOG_PROTO_IETF);
+    void UnsetProtocol(void);
+#endif /* USE_NETWORK */
+#ifdef USE_FILE
+    bool SetFile(File *file);
+    void UnsetFile(void);
+#endif /* USE_FILE */
+#ifdef USE_HARDWARE_SERIAL
+    void SetSerial(HardwareSerial *serial);
+#endif /* USE_HARDWARE_SERIAL */
+#ifdef USE_SOFTWARE_SERIAL
+    void SetSerial(SoftwareSerial *serial);
+#endif /* USE_SOFTWARE_SERIAL */
+#ifdef USE_SERIAL
+    void UnsetSerial(void);
+#endif /* USE_SERIAL */
+
+#ifdef USE_NETWORK
+    Syslog &server(const char* server, uint16_t port);
+    Syslog &server(IPAddress ip, uint16_t port);
+#endif /* USE_NETWORK */
+    Syslog &deviceHostname(const char* deviceHostname);
+    Syslog &appName(const char* appName);
+    Syslog &defaultPriority(uint16_t pri = LOG_KERN);
+
+    Syslog &logMask(uint8_t priMask);
+
+    bool log(uint16_t pri, const __FlashStringHelper *message);
+    bool log(uint16_t pri, const String &message);
+    bool log(uint16_t pri, const char *message);
+
+    bool vlogf(uint16_t pri, const char *fmt, va_list args) __attribute__((format(printf, 3, 0)));
+    bool vlogf_P(uint16_t pri, PGM_P fmt_P, va_list args) __attribute__((format(printf, 3, 0)));
+    
+    bool logf(uint16_t pri, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
+    bool logf(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+
+    bool logf_P(uint16_t pri, PGM_P fmt_P, ...) __attribute__((format(printf, 3, 4)));
+    bool logf_P(PGM_P fmt_P, ...) __attribute__((format(printf, 2, 3)));
+
+    bool log(const __FlashStringHelper *message);
+    bool log(const String &message);
+    bool log(const char *message);
+#ifdef USE_RTC
+    bool SetRtc(RTC_Unified *rtc, uint8_t format);
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    bool SetNTP(NTPClient *client, uint8_t format);
+    String dateNtpString(void);
+#endif /* USE_NTP */
+
+
+
+
+
+
+
 An Arduino library for logging to Syslog server via `UDP` protocol in 
 [IETF (RFC 5424)] and [BSD (RFC 3164)] message format
 

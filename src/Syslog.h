@@ -1,11 +1,41 @@
 #ifndef SYSLOG_H
 #define SYSLOG_H 
 
+#include "config.h"
+
+#include <stdio.h>
 #include <stdarg.h>
 #include <inttypes.h>
 #include <WString.h>
+
+#include <Arduino.h>
+#include <detectArduinoHardware.h>
+#include <dateUtils.h>
+
+#ifdef USE_RTC
+#include <RTC_U.h>
+#endif /* USE_RTC */
+
+#ifdef USE_NETWORK
 #include <IPAddress.h>
 #include <Udp.h>
+#endif
+
+#ifdef USE_NTP
+#include <NTPClient.h>
+#endif
+
+#ifdef USE_FILE
+#include <SD.h>
+#endif
+
+#ifdef USE_SOFTWARE_SERIAL
+#include <SoftwareSerial.h>
+#endif
+
+#if defined(USE_HARDWARE_SERIAL) || defined(USE_SOFTWARE_SERIAL)
+#define USE_SERIAL
+#endif
 
 // undefine ugly logf macro from avr's math.h
 // this fix compilation errors on AtmelAVR platforms
@@ -80,28 +110,103 @@
 #define LOG_MASK(pri)  (1 << (pri))	/* mask for one priority */
 #define LOG_UPTO(pri)  ((1 << ((pri)+1)) - 1)	/* all priorities through pri */
 
+#define EPOCH_TIME 0  /* unix epoch time */
+#define DATE_TIME  1  /* date format */
+
+#ifdef USE_SERIAL
+union Channel {
+#ifdef USE_HARDWARE_SERIAL
+  HARDWARE_SERIAL_TYPE *hSerial;
+#endif
+#ifdef USE_SOFTWARE_SERIAL
+  SoftwareSerial *sSerial;
+#endif
+};
+#endif /* USE_SERIAL */
+
 class Syslog {
   private:
+    const char* _deviceHostname;
+    const char* _appName;
+    uint16_t _priDefault;
+    uint8_t _priMask = 0xff;
+#ifdef USE_NETWORK
     UDP* _client;
     uint8_t _protocol;
     IPAddress _ip;
     const char* _server;
     uint16_t _port;
-    const char* _deviceHostname;
-    const char* _appName;
-    uint16_t _priDefault;
-    uint8_t _priMask = 0xff;
+    bool use_protocol;
+#endif /* USE_NETWORK */
+#ifdef USE_FILE
+    bool use_file;
+    File *logFile;
+#endif /* USE_FILE */
+#ifdef USE_SERIAL
+    uint8_t use_serial; // 0 使用しない, 1 ハードシリアル, 2 ソフトシリアル
+    union Channel channel;
+#endif /* USE_SERIAL */
 
     bool _sendLog(uint16_t pri, const char *message);
     bool _sendLog(uint16_t pri, const __FlashStringHelper *message);
+#ifdef USE_NETWORK
+    bool _sendProtocol(uint16_t pri, const char *message);
+    bool _sendProtocol(uint16_t pri, const __FlashStringHelper *message);
+#endif /* USE_NETWORK */
+#ifdef USE_FILE
+    void _sendFile(uint16_t pri, const char *message);
+    void _sendFile(uint16_t pri, const __FlashStringHelper *message);
+#endif /* USE_FILE */
+#ifdef USE_HARDWARE_SERIAL
+    void _sendHardSerial(uint16_t pri, const char *message);
+    void _sendHardSerial(uint16_t pri, const __FlashStringHelper *message);
+#endif /* USE_HARDWARE_SERIAL */
+#ifdef USE_SOFTWARE_SERIAL
+    void _sendSoftSerial(uint16_t pri, const char *message);
+    void _sendSoftSerial(uint16_t pri, const __FlashStringHelper *message);
+#endif /* USE_SOFTWARE_SERIAL */
+#if defined(USE_FILE) || defined(USE_SERIAL)
+    String priorityString(uint16_t pri);
+#endif /* USE_FILE || USE_SERIAL */
+#ifdef USE_RTC
+    RTC_Unified *rtc;
+    String dateString(void);
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    NTPClient *ntpClient;
+#endif /* USE_NTP */
+#if defined(USE_RTC) || defined(USE_NTP)
+    uint8_t time_format;
+#endif /* USE_RTC || USE_NTP */
+
 
   public:
-    Syslog(UDP &client, uint8_t protocol = SYSLOG_PROTO_IETF);
-    Syslog(UDP &client, const char* server, uint16_t port, const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN, uint8_t protocol = SYSLOG_PROTO_IETF);
-    Syslog(UDP &client, IPAddress ip, uint16_t port, const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN, uint8_t protocol = SYSLOG_PROTO_IETF);
+    Syslog(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
+    void SetLogInfo(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
+#ifdef USE_NETWORK
+    void SetProtocol(UDP &client, uint8_t protocol = SYSLOG_PROTO_IETF);
+    void SetProtocol(UDP &client, const char* server, uint16_t port, uint8_t protocol = SYSLOG_PROTO_IETF);
+    void SetProtocol(UDP &client, IPAddress ip, uint16_t port, uint8_t protocol = SYSLOG_PROTO_IETF);
+    void UnsetProtocol(void);
+#endif /* USE_NETWORK */
+#ifdef USE_FILE
+    bool SetFile(File *file);
+    void UnsetFile(void);
+#endif /* USE_FILE */
+#ifdef USE_HARDWARE_SERIAL
+    void SetSerial(HARDWARE_SERIAL_TYPE *serial);
+#endif /* USE_HARDWARE_SERIAL */
+#ifdef USE_SOFTWARE_SERIAL
+    void SetSerial(SoftwareSerial *serial);
+#endif /* USE_SOFTWARE_SERIAL */
+#ifdef USE_SERIAL
+    void UnsetSerial(void);
+#endif /* USE_SERIAL */
 
+#ifdef USE_NETWORK
     Syslog &server(const char* server, uint16_t port);
     Syslog &server(IPAddress ip, uint16_t port);
+#endif /* USE_NETWORK */
     Syslog &deviceHostname(const char* deviceHostname);
     Syslog &appName(const char* appName);
     Syslog &defaultPriority(uint16_t pri = LOG_KERN);
@@ -124,6 +229,13 @@ class Syslog {
     bool log(const __FlashStringHelper *message);
     bool log(const String &message);
     bool log(const char *message);
+#ifdef USE_RTC
+    bool SetRtc(RTC_Unified *rtc, uint8_t format);
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    bool SetNTP(NTPClient *client, uint8_t format);
+    String dateNtpString(void);
+#endif /* USE_NTP */
 };
 
 #endif

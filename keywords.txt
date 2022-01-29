@@ -6,6 +6,7 @@
 #	Datatypes	(KEYWORD1)
 #######################################
 Syslog	KEYWORD1
+Channel	KEYWORD1
 
 #######################################
 #	Methods	and	Functions	(KEYWORD2)
@@ -18,6 +19,16 @@ deviceHostname	KEYWORD2
 appName	KEYWORD2
 defaultPriority	KEYWORD2
 logMask	KEYWORD2
+dateNtpString	KEYWORD2
+SetNTP	KEYWORD2
+SetRtc	KEYWORD2
+SetSerial	KEYWORD2
+UnsetSerial	KEYWORD2
+SetFile	KEYWORD2
+UnsetFile	KEYWORD2
+SetProtocol	KEYWORD2
+UnsetProtocol	KEYWORD2
+SetLogInfo	KEYWORD2
 
 #######################################
 #	Instances	(KEYWORD2)
@@ -63,3 +74,12 @@ LOG_UPTO	LITERAL1
 
 SYSLOG_PROTO_IETF	LITERAL1
 SYSLOG_PROTO_BSD	LITERAL1
+
+USE_NETWORK	LITERAL1
+USE_FILE	LITERAL1
+USE_HARDWARE_SERIAL	LITERAL1
+USE_SOFTWARE_SERIAL	LITERAL1
+
+OUTPUT_TIME	LITERAL1
+USE_RTC	LITERAL1
+USE_NTP	LITERAL1
