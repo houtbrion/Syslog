@@ -6,7 +6,7 @@
  * シリアル関係
  */
 // ソフトウェアシリアルピン番号
-#define SOFT_SERIAL_RX 10
+#define SOFT_SERIAL_RX 12
 #define SOFT_SERIAL_TX 11
 
 #define SERIAL_SPEED 9600
