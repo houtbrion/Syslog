@@ -4,7 +4,19 @@ Arduino用のsyslogプロトコルライブラリ[https://github.com/arcao/Syslo
 また，[オリジナルのライブラリ](https://github.com/arcao/Syslog)は時刻情報に対応していないため，RTCやNTPと連携する機能も追加しています．
 
 syslogプロトコルに関する詳細は[オリジナルのライブラリ](https://github.com/arcao/Syslog)を参照してください．
-## インストール
+
+動作を確認した環境は以下の表の通り．
+
+|CPUアーキ|本体|ネットワークI/F|SD I/F|RTC|
+|---|---|---|---|---|
+|AVR|[Arduino Mega 2560 R3](https://www.arduino.cc/en/Main/arduinoBoardMega2560)|[Ethernet Shield 2](https://store-usa.arduino.cc/products/arduino-ethernet-shield-2)|[Ethernet Shield 2](https://store-usa.arduino.cc/products/arduino-ethernet-shield-2)|[RTC-8564NB](https://akizukidenshi.com/catalog/g/gI-00233/)|
+|AVR|同上|同上|同上|[DS1307](https://akizukidenshi.com/catalog/g/gK-15488/)|
+|SAMD|[Arduino MKR WiFi 1010](https://store-usa.arduino.cc/products/arduino-mkr-wifi-1010?selectedStore=us)|NINA-W102(内蔵)|[Adafruit MicroSD card breakout board+](https://www.adafruit.com/product/254)|[RTC-8564NB](https://akizukidenshi.com/catalog/g/gI-00233/)|
+|ESP32|[ESPr Developer 32](https://www.switch-science.com/catalog/3210/)|ESP32内蔵WiFi|[Adafruit MicroSD card breakout board+](https://www.adafruit.com/product/254)|[RTC-8564NB](https://akizukidenshi.com/catalog/g/gI-00233/)|
+
+
+
+## 利用方法
 
 ### 依存するライブラリのインストール
 以下のライブラリをインストールしてください．
