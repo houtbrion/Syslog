@@ -2,6 +2,26 @@
 
 シンプルにlogを書き出すだけのサンプルプログラムで，syslogプロトコル，ファイル，シリアルへの出力は本スケッチのconfig.hとライブラリのconfig.hで切り替えてください．
 
+## インストール
+
+
+当然ではありますが，syslogのライブラリが必要なので，それをインストールしてください．
+- [syslog](https://github.com/houtbrion/Syslog)
+
+本スケッチ用に以下のものもインストールしてください．
+- [detectArduinoHardware](https://github.com/houtbrion/detectArduinoHardware)
+- detectArduinoHardwareのextensionディレクトリに収納されている拡張機能ライブラリarduinoHardwareHelper
+- [NiUtils](https://github.com/houtbrion/NiUtils)
+
+RTCを利用する人は，以下のライブラリをインストールしてください．
+- [RTC_U](https://github.com/houtbrion/RTC_U)
+- [RTC_U](https://github.com/houtbrion/RTC_U)内の各RTCチップ用のドライバと，extentionもインストールしてください．
+
+もし，ESP8266でソフトウェアシリアルを利用する場合は，特別なライブラリが必要になるため，以下のライブラリをインストールしてください．
+- [EspSoftwareSerial](https://www.arduino.cc/reference/en/libraries/espsoftwareserial/)
+
+
+
 ## 動作確認済みハードウェア
 
 |CPUアーキ|本体|ネットワークI/F|SD I/F|RTC|ソフトシリアル|

@@ -65,6 +65,6 @@
 /*
  * RTC関係
  */
-#define USE_RTC8564NB
+//#define USE_RTC8564NB
 //#define USE_DS1307
 //#define USE_DS3234
