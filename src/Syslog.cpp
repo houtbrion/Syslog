@@ -13,7 +13,11 @@ Syslog::Syslog(const char* deviceHostname , const char* appName, uint16_t priDef
   this->_priDefault = priDefault;
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+  this->use_file=-1;
+#else /* USE_SD_FAT */
   this->use_file=false;
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 
 #ifdef USE_SERIAL
@@ -36,6 +40,45 @@ void Syslog::SetLogInfo(const char* deviceHostname, const char* appName, uint16_
 }
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+bool Syslog::SetFile(File *file) {
+  bool flag=file->seek(file->size());
+  if (!flag) {return false;}
+  this->fatFile=file;
+  this->use_file=0;
+  return true;
+}
+
+bool Syslog::SetFile(File32 *file) {
+  bool flag=file->seek(file->size());
+  if (!flag) {return false;}
+  this->fat32File=file;
+  this->use_file=1;
+  return true;
+}
+
+bool Syslog::SetFile(ExFile *file) {
+  bool flag=file->seek(file->size());
+  if (!flag) {return false;}
+  this->exFatFile=file;
+  this->use_file=2;
+  return true;
+}
+
+/*
+bool Syslog::SetFile(FsFile *file) {
+  bool flag=file->seek(file->size());
+  if (!flag) {return false;}
+  this->sdFsFile=file;
+  this->use_file=0;
+  return true;
+}
+*/
+
+void Syslog::UnsetFile(void) {
+  this->use_file=-1;
+}
+#else /* USE_SD_FAT */
 bool Syslog::SetFile(File *file) {
   bool flag=file->seek(file->size());
   if (!flag) {return false;}
@@ -47,6 +90,7 @@ bool Syslog::SetFile(File *file) {
 void Syslog::UnsetFile(void) {
   this->use_file=false;
 }
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
@@ -58,12 +102,12 @@ void Syslog::SetSerial(HardwareSerial *serial) {
 }
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
 
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
 void Syslog::SetSerial(Serial_ *serial) {
   this->channel._Serial=serial;
   this->use_serial=TYPE_USB_SERIAL;
 }
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC */
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
 void Syslog::SetSerial(Uart *serial) {
@@ -72,6 +116,12 @@ void Syslog::SetSerial(Uart *serial) {
 }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+void Syslog::SetSerial(USBCDC *serial) {
+  this->channel.usbSerial=serial;
+  this->use_serial=TYPE_UART_SERIAL;
+}
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 
 #endif /* USE_HARDWARE_SERIAL */
 
@@ -407,6 +457,98 @@ bool Syslog::_sendProtocol(uint16_t pri, const char *message) {
 #endif /* USE_NETWORK */
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+void Syslog::_sendFile(uint16_t pri, const char *message) {
+  if (this->use_file==0) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+    this->fatFile->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    this->fatFile->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+    this->fatFile->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+    this->fatFile->print(' ');
+#endif /* OUTPUT_TIME */
+    this->fatFile->print(priorityString(pri));
+    this->fatFile->print(' ');
+    this->fatFile->print(this->_deviceHostname);
+    this->fatFile->print(' ');
+    this->fatFile->print(this->_appName);
+    this->fatFile->print(' ');
+    this->fatFile->println(message);
+    this->fatFile->flush();
+  }
+  if (this->use_file==1) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+    this->fat32File->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    this->fat32File->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+    this->fat32File->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+    this->fat32File->print(' ');
+#endif /* OUTPUT_TIME */
+    this->fat32File->print(priorityString(pri));
+    this->fat32File->print(' ');
+    this->fat32File->print(this->_deviceHostname);
+    this->fat32File->print(' ');
+    this->fat32File->print(this->_appName);
+    this->fat32File->print(' ');
+    this->fat32File->println(message);
+    this->fat32File->flush();
+  }
+  if (this->use_file==2) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+    this->exFatFile->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    this->exFatFile->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+    this->exFatFile->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+    this->exFatFile->print(' ');
+#endif /* OUTPUT_TIME */
+    this->exFatFile->print(priorityString(pri));
+    this->exFatFile->print(' ');
+    this->exFatFile->print(this->_deviceHostname);
+    this->exFatFile->print(' ');
+    this->exFatFile->print(this->_appName);
+    this->exFatFile->print(' ');
+    this->exFatFile->println(message);
+    this->exFatFile->flush();
+  }
+//  if (this->use_file==3) {
+//#ifdef OUTPUT_TIME
+//#ifdef USE_RTC
+//    this->sdFsFile->print(this->dateString());
+//#endif /* USE_RTC */
+//#ifdef USE_NTP
+//    this->sdFsFile->print(this->dateNtpString());
+//#endif /* USE_NTP */
+//#if !defined(USE_RTC) && !defined(USE_NTP)
+//    this->sdFsFile->print(millis());
+//#endif /* not USE_NTP && not USE_RTC */
+//    this->sdFsFile->print(' ');
+//#endif /* OUTPUT_TIME */
+//    this->sdFsFile->print(priorityString(pri));
+//    this->sdFsFile->print(' ');
+//    this->sdFsFile->print(this->_deviceHostname);
+//    this->sdFsFile->print(' ');
+//    this->sdFsFile->print(this->_appName);
+//    this->sdFsFile->print(' ');
+//    this->sdFsFile->println(message);
+//    this->sdFsFile->flush();
+//  }
+}
+#else /* USE_SD_FAT */
 void Syslog::_sendFile(uint16_t pri, const char *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
@@ -429,6 +571,7 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
   this->logFile->println(message);
   this->logFile->flush();
 }
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
@@ -456,7 +599,7 @@ void Syslog::_sendHardSerial(uint16_t pri, const char *message) {
 }
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
 
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
 void Syslog::_sendUsbSerial(uint16_t pri, const char *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
@@ -478,13 +621,13 @@ void Syslog::_sendUsbSerial(uint16_t pri, const char *message) {
   this->channel._Serial->print(' ');
   this->channel._Serial->println(message);
 }
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC */
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
 void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
-  this->channel._Serial->print(this->dateString());
+  this->channel.uSerial->print(this->dateString());
 #endif /* USE_RTC */
 #ifdef USE_NTP
   this->channel.uSerial->print(this->dateNtpString());
@@ -492,7 +635,7 @@ void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
 #if !defined(USE_RTC) && !defined(USE_NTP)
   this->channel.uSerial->print(millis());
 #endif /* not USE_NTP && not USE_RTC */
-  this->channel._Serial->print(' ');
+  this->channel.uSerial->print(' ');
 #endif /* OUTPUT_TIME */
   this->channel.uSerial->print(priorityString(pri));
   this->channel.uSerial->print(' ');
@@ -503,6 +646,29 @@ void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
   this->channel.uSerial->println(message);
 }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+  this->channel.usbSerial->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+  this->channel.usbSerial->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+  this->channel.usbSerial->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+  this->channel.usbSerial->print(' ');
+#endif /* OUTPUT_TIME */
+  this->channel.usbSerial->print(priorityString(pri));
+  this->channel.usbSerial->print(' ');
+  this->channel.usbSerial->print(this->_deviceHostname);
+  this->channel.usbSerial->print(' ');
+  this->channel.usbSerial->print(this->_appName);
+  this->channel.usbSerial->print(' ');
+  this->channel.usbSerial->println(message);
+}
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
@@ -551,9 +717,15 @@ inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
 #endif /* USE_NETWORK */
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+  if (this->use_file!=-1) {
+    this->_sendFile(pri, message);
+  }
+#else /* USE_SD_FAT */
   if (this->use_file) {
     this->_sendFile(pri, message);
   }
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
@@ -564,17 +736,24 @@ inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
   }
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
 
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL  && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
   if (TYPE_USB_SERIAL==this->use_serial) {
     this->_sendUsbSerial(pri, message);
   }
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL   && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC */
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
   if (TYPE_UART_SERIAL==this->use_serial) {
     this->_sendUartSerial(pri, message);
   }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+  if (TYPE_UART_SERIAL==this->use_serial) {
+    this->_sendUartSerial(pri, message);
+  }
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
+
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
@@ -636,6 +815,98 @@ bool Syslog::_sendProtocol(uint16_t pri, const __FlashStringHelper *message) {
 #endif /* USE_NETWORK */
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
+  if (this->use_file==0) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+    this->fatFile->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    this->fatFile->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+    this->fatFile->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+    this->fatFile->print(' ');
+#endif /* OUTPUT_TIME */
+    this->fatFile->print(priorityString(pri));
+    this->fatFile->print(' ');
+    this->fatFile->print(this->_deviceHostname);
+    this->fatFile->print(' ');
+    this->fatFile->print(this->_appName);
+    this->fatFile->print(' ');
+    this->fatFile->println(message);
+    this->fatFile->flush();
+  }
+  if (this->use_file==1) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+    this->fat32File->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    this->fat32File->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+    this->fat32File->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+    this->fat32File->print(' ');
+#endif /* OUTPUT_TIME */
+    this->fat32File->print(priorityString(pri));
+    this->fat32File->print(' ');
+    this->fat32File->print(this->_deviceHostname);
+    this->fat32File->print(' ');
+    this->fat32File->print(this->_appName);
+    this->fat32File->print(' ');
+    this->fat32File->println(message);
+    this->fat32File->flush();
+  }
+  if (this->use_file==2) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+    this->exFatFile->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+    this->exFatFile->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+    this->exFatFile->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+    this->exFatFile->print(' ');
+#endif /* OUTPUT_TIME */
+    this->exFatFile->print(priorityString(pri));
+    this->exFatFile->print(' ');
+    this->exFatFile->print(this->_deviceHostname);
+    this->exFatFile->print(' ');
+    this->exFatFile->print(this->_appName);
+    this->exFatFile->print(' ');
+    this->exFatFile->println(message);
+    this->exFatFile->flush();
+  }
+//  if (this->use_file==3) {
+//#ifdef OUTPUT_TIME
+//#ifdef USE_RTC
+//    this->sdFsFile->print(this->dateString());
+//#endif /* USE_RTC */
+//#ifdef USE_NTP
+//    this->sdFsFile->print(this->dateNtpString());
+//#endif /* USE_NTP */
+//#if !defined(USE_RTC) && !defined(USE_NTP)
+//    this->sdFsFile->print(millis());
+//#endif /* not USE_NTP && not USE_RTC */
+//    this->sdFsFile->print(' ');
+//#endif /* OUTPUT_TIME */
+//    this->sdFsFile->print(priorityString(pri));
+//    this->sdFsFile->print(' ');
+//    this->sdFsFile->print(this->_deviceHostname);
+//    this->sdFsFile->print(' ');
+//    this->sdFsFile->print(this->_appName);
+//    this->sdFsFile->print(' ');
+//    this->sdFsFile->println(message);
+//    this->sdFsFile->flush();
+//  }
+}
+#else /* USE_SD_FAT */
 void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
@@ -658,6 +929,7 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
   this->logFile->println(message);
   this->logFile->flush();
 }
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
@@ -685,7 +957,7 @@ void Syslog::_sendHardSerial(uint16_t pri, const __FlashStringHelper *message) {
 }
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
 
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
 void Syslog::_sendUsbSerial(uint16_t pri, const __FlashStringHelper *message) {
 #ifdef OUTPUT_TIME
 #ifdef USE_RTC
@@ -707,7 +979,7 @@ void Syslog::_sendUsbSerial(uint16_t pri, const __FlashStringHelper *message) {
   this->channel._Serial->print(' ');
   this->channel._Serial->println(message);
 }
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC */
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
 void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
@@ -732,6 +1004,31 @@ void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
   this->channel.uSerial->println(message);
 }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
+#ifdef OUTPUT_TIME
+#ifdef USE_RTC
+  this->channel.usbSerial->print(this->dateString());
+#endif /* USE_RTC */
+#ifdef USE_NTP
+  this->channel.usbSerial->print(this->dateNtpString());
+#endif /* USE_NTP */
+#if !defined(USE_RTC) && !defined(USE_NTP)
+  this->channel.usbSerial->print(millis());
+#endif /* not USE_NTP && not USE_RTC */
+  this->channel.usbSerial->print(' ');
+#endif /* OUTPUT_TIME */
+  this->channel.usbSerial->print(priorityString(pri));
+  this->channel.usbSerial->print(' ');
+  this->channel.usbSerial->print(this->_deviceHostname);
+  this->channel.usbSerial->print(' ');
+  this->channel.usbSerial->print(this->_appName);
+  this->channel.usbSerial->print(' ');
+  this->channel.usbSerial->println(message);
+}
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
+
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL
@@ -780,9 +1077,15 @@ inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
 #endif /* USE_NETWORK */
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+  if (this->use_file!=-1) {
+    this->_sendFile(pri, message);
+  }
+#else /* USE_SD_FAT */
   if (this->use_file) {
     this->_sendFile(pri, message);
   }
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 
 #ifdef USE_HARDWARE_SERIAL
@@ -793,17 +1096,23 @@ inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
   }
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
 
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL  && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
   if (TYPE_USB_SERIAL==this->use_serial) {
     this->_sendUsbSerial(pri, message);
   }
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL  && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC */
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
   if (TYPE_UART_SERIAL==this->use_serial) {
     this->_sendUartSerial(pri, message);
   }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+  if (TYPE_UART_SERIAL==this->use_serial) {
+    this->_sendUartSerial(pri, message);
+  }
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 #endif /* USE_HARDWARE_SERIAL */
 
 #ifdef USE_SOFTWARE_SERIAL

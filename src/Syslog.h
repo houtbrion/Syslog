@@ -26,8 +26,15 @@
 #endif
 
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+//#ifndef INCLUDE_SDIOS
+//#define INCLUDE_SDIOS 1
+//#endif  // INCLUDE_SDIOS
+#include <SdFat.h>
+#else /* USE_SD_FAT */
 #include <SD.h>
-#endif
+#endif /* USE_SD_FAT */
+#endif /* USE_FILE */
 
 #ifdef USE_SOFTWARE_SERIAL
 #include <SoftwareSerial.h>
@@ -121,17 +128,23 @@
 #ifdef USE_SERIAL
 union Channel {
 #ifdef USE_HARDWARE_SERIAL
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
-  HardwareSerial    *hSerial;
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
-
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
-  Serial_   *_Serial;
-#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
   Uart   *uSerial;
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+  USBCDC   *usbSerial;
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
+  HardwareSerial    *hSerial;
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
+
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
+  Serial_   *_Serial;
+#endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
+
 #endif
 
 #ifdef USE_SOFTWARE_SERIAL
@@ -155,8 +168,16 @@ class Syslog {
     bool use_protocol;
 #endif /* USE_NETWORK */
 #ifdef USE_FILE
+#ifdef USE_SD_FAT
+    int use_file;  // -1 not use , 0 fat , 1 fat32,  2 exfat , 3 sdfs
+    File *fatFile;
+    File32 *fat32File;
+    ExFile *exFatFile;
+    //FsFile *sdFsFile;
+#else /* USE_SD_FAT */
     bool use_file;
     File *logFile;
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 #ifdef USE_SERIAL
     uint8_t use_serial; // 0 使用しない, 1 ハードシリアル, 2 ソフトシリアル
@@ -187,6 +208,10 @@ class Syslog {
     void _sendUartSerial(uint16_t pri, const char *message);
     void _sendUartSerial(uint16_t pri, const __FlashStringHelper *message);
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+    void _sendUartSerial(uint16_t pri, const char *message);
+    void _sendUartSerial(uint16_t pri, const __FlashStringHelper *message);
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 #endif /* USE_HARDWARE_SERIAL */
 #ifdef USE_SOFTWARE_SERIAL
     void _sendSoftSerial(uint16_t pri, const char *message);
@@ -221,17 +246,25 @@ class Syslog {
 #ifdef USE_FILE
     bool SetFile(File *file);
     void UnsetFile(void);
+#ifdef USE_SD_FAT
+    bool SetFile(File32 *file);
+    bool SetFile(ExFile *file);
+    //bool SetFile(FsFile *file);
+#endif /* USE_SD_FAT */
 #endif /* USE_FILE */
 #ifdef USE_HARDWARE_SERIAL
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
     void SetSerial(HardwareSerial *serial);
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
-#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL
+#if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
     void SetSerial(Serial_ *serial);
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL */
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
     void SetSerial(Uart *serial);
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
+#if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
+    void SetSerial(USBCDC *serial);
+#endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 #endif /* USE_HARDWARE_SERIAL */
 #ifdef USE_SOFTWARE_SERIAL
     void SetSerial(SoftwareSerial *serial);
