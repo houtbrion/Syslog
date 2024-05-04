@@ -318,6 +318,7 @@ bool Syslog::SetRtc(RTC_Unified *rtc, uint8_t format) {
   if ((0!=format)&&(1!=format)) return false;
   this->rtc=rtc;
   this->time_format=format;
+  return true;
 }
 #endif /* USE_RTC */
 
@@ -326,6 +327,7 @@ bool Syslog::SetNTP(NTPClient *client, uint8_t format) {
   if ((0!=format)&&(1!=format)) return false;
   this->ntpClient=client;
   this->time_format=format;
+  return true;
 }
 #endif /* USE_NTP */
 
