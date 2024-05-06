@@ -27,15 +27,15 @@ syslogプロトコルに関する詳細は[オリジナルのライブラリ](ht
 - [SoftwareSerial.h](https://www.arduino.cc/en/Reference/softwareSerial)
 
 ### 設定
-アプリをコンパイルする際に，このライブラリの「config.h」を編集して，必要な機能だけを生かしてください．
+アプリをコンパイルする際に，このライブラリの「syslog_config.h」を編集して，必要な機能だけを生かしてください．
 ```
-#define USE_NETWORK           // syslogプロトコルでサーバに送る機能
-#define USE_FILE              // ファイルにログを保存する機能
-#define USE_HARDWARE_SERIAL   // ログをハードウェアシリアルに出力する機能
-#define USE_SOFTWARE_SERIAL   // ログをソフトシリアルに出力する機能
-#define OUTPUT_TIME           // 時刻情報を出力する機能(以下の両方をコメントアウトした場合はmillis()の出力を利用)
-#define USE_RTC               // 時刻情報をRTCから取得
-#define USE_NTP               // 時刻情報をNTPで取得
+#define _SYSLOG_USE_NETWORK           // syslogプロトコルでサーバに送る機能
+#define _SYSLOG_USE_FILE              // ファイルにログを保存する機能
+#define _SYSLOG_USE_HARDWARE_SERIAL   // ログをハードウェアシリアルに出力する機能
+#define _SYSLOG_USE_SOFTWARE_SERIAL   // ログをソフトシリアルに出力する機能
+#define _SYSLOG_OUTPUT_TIME           // 時刻情報を出力する機能(以下の両方をコメントアウトした場合はmillis()の出力を利用)
+#define _SYSLOG_USE_RTC               // 時刻情報をRTCから取得
+#define _SYSLOG_USE_NTP               // 時刻情報をNTPで取得
 ```
 
 使わない機能の定義をコメントアウトすることで，本ライブラリの不要な機能を削るだけでなく，上記のRTCやNTPなどのライブラリもリンクされないので，メモリやバイナリサイズの圧縮に役立ちます．

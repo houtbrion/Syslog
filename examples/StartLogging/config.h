@@ -65,6 +65,14 @@
 /*
  * RTC関係
  */
+
+
+////#define USE_RTC_4543
+////#define USE_DS3234
 //#define USE_RTC8564NB
 //#define USE_DS1307
-//#define USE_DS3234
+//#define USE_DS3231
+//#define USE_PCF8523
+//#define USE_RV8803
+#define USE_RX8025
+//#define USE_RX8900

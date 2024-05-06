@@ -3,34 +3,34 @@
 
 // Public Methods //////////////////////////////////////////////////////////////
 Syslog::Syslog(const char* deviceHostname , const char* appName, uint16_t priDefault) {
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
   this->_server = NULL;
   this->_port = 0;
   this->use_protocol=false;
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
   this->_deviceHostname = (deviceHostname == NULL) ? SYSLOG_NILVALUE : deviceHostname;
   this->_appName = (appName == NULL) ? SYSLOG_NILVALUE : appName;
   this->_priDefault = priDefault;
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
   this->use_file=-1;
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
   this->use_file=false;
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
 #ifdef USE_SERIAL
   this->use_serial=0;
 #endif /* USE_SERIAL */
 
-#ifdef USE_RTC
+#ifdef _SYSLOG_USE_RTC
   this->rtc=NULL;
-#endif /* USE_RTC */
+#endif /* _SYSLOG_USE_RTC */
 
-#ifdef USE_NTP
+#ifdef _SYSLOG_USE_NTP
   this->ntpClient=NULL;
-#endif /* USE_NTP */
+#endif /* _SYSLOG_USE_NTP */
 }
 
 void Syslog::SetLogInfo(const char* deviceHostname, const char* appName, uint16_t priDefault) {
@@ -39,8 +39,8 @@ void Syslog::SetLogInfo(const char* deviceHostname, const char* appName, uint16_
   this->_priDefault = priDefault;
 }
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
 bool Syslog::SetFile(File *file) {
   bool flag=file->seek(file->size());
   if (!flag) {return false;}
@@ -78,7 +78,7 @@ bool Syslog::SetFile(FsFile *file) {
 void Syslog::UnsetFile(void) {
   this->use_file=-1;
 }
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
 bool Syslog::SetFile(File *file) {
   bool flag=file->seek(file->size());
   if (!flag) {return false;}
@@ -90,10 +90,10 @@ bool Syslog::SetFile(File *file) {
 void Syslog::UnsetFile(void) {
   this->use_file=false;
 }
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
 void Syslog::SetSerial(HardwareSerial *serial) {
@@ -123,14 +123,14 @@ void Syslog::SetSerial(USBCDC *serial) {
 }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 
-#endif /* USE_HARDWARE_SERIAL */
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
 void Syslog::SetSerial(SoftwareSerial *serial) {
   this->channel.sSerial=serial;
   this->use_serial=TYPE_SOFTWARE_SERIAL;
 }
-#endif /* USE_SOFTWARE_SERIAL */
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
 
 #ifdef USE_SERIAL
 void Syslog::UnsetSerial(void) {
@@ -138,7 +138,7 @@ void Syslog::UnsetSerial(void) {
 }
 #endif /* USE_SERIAL */
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
 void Syslog::SetProtocol(UDP &client, uint8_t protocol) {
   this->_client = &client;
   this->_protocol = protocol;
@@ -178,7 +178,7 @@ Syslog &Syslog::server(IPAddress ip, uint16_t port) {
   this->_port = port;
   return *this;
 }
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
 
 Syslog &Syslog::deviceHostname(const char* deviceHostname) {
   this->_deviceHostname = (deviceHostname == NULL) ? SYSLOG_NILVALUE : deviceHostname;
@@ -313,26 +313,26 @@ bool Syslog::log(const char *message) {
   return this->_sendLog(this->_priDefault, message);
 }
 
-#ifdef USE_RTC
+#ifdef _SYSLOG_USE_RTC
 bool Syslog::SetRtc(RTC_Unified *rtc, uint8_t format) {
   if ((0!=format)&&(1!=format)) return false;
   this->rtc=rtc;
   this->time_format=format;
   return true;
 }
-#endif /* USE_RTC */
+#endif /* _SYSLOG_USE_RTC */
 
-#ifdef USE_NTP
+#ifdef _SYSLOG_USE_NTP
 bool Syslog::SetNTP(NTPClient *client, uint8_t format) {
   if ((0!=format)&&(1!=format)) return false;
   this->ntpClient=client;
   this->time_format=format;
   return true;
 }
-#endif /* USE_NTP */
+#endif /* _SYSLOG_USE_NTP */
 
 // Private Methods /////////////////////////////////////////////////////////////
-#ifdef USE_RTC
+#ifdef _SYSLOG_USE_RTC
 String Syslog::dateString(void) {
   date_t date;
   this->rtc->getTime(&date);
@@ -354,9 +354,9 @@ String Syslog::dateString(void) {
   }
   return result;
 }
-#endif /* USE_RTC */
+#endif /* _SYSLOG_USE_RTC */
 
-#ifdef USE_NTP
+#ifdef _SYSLOG_USE_NTP
 String Syslog::dateNtpString(void) {
   this->ntpClient->update();
   String result;
@@ -367,9 +367,9 @@ String Syslog::dateNtpString(void) {
   }
   return result;
 }
-#endif /* USE_NTP */
+#endif /* _SYSLOG_USE_NTP */
 
-#if defined(USE_FILE) || defined(USE_SERIAL)
+#if defined(_SYSLOG_USE_FILE) || defined(USE_SERIAL)
 String Syslog::priorityString(uint16_t pri) {
   String result="";
   switch(LOG_PRIMASK&pri) {
@@ -408,9 +408,9 @@ String Syslog::priorityString(uint16_t pri) {
   }
   return result;
 }
-#endif /* USE_FILE || USE_SERIAL */
+#endif /* _SYSLOG_USE_FILE || USE_SERIAL */
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
 bool Syslog::_sendProtocol(uint16_t pri, const char *message) {
   int result;
   if (this->_server != NULL) {
@@ -439,41 +439,41 @@ bool Syslog::_sendProtocol(uint16_t pri, const char *message) {
   } else {
     this->_client->print(F("[0]: "));
   }
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->_client->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->_client->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->_client->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->_client->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->_client->print(message);
   this->_client->endPacket();
 
   return true;
 }
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
 void Syslog::_sendFile(uint16_t pri, const char *message) {
   if (this->use_file==0) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
     this->fatFile->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     this->fatFile->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
     this->fatFile->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
     this->fatFile->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
     this->fatFile->print(priorityString(pri));
     this->fatFile->print(' ');
     this->fatFile->print(this->_deviceHostname);
@@ -484,18 +484,18 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
     this->fatFile->flush();
   }
   if (this->use_file==1) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
     this->fat32File->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     this->fat32File->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
     this->fat32File->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
     this->fat32File->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
     this->fat32File->print(priorityString(pri));
     this->fat32File->print(' ');
     this->fat32File->print(this->_deviceHostname);
@@ -506,18 +506,18 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
     this->fat32File->flush();
   }
   if (this->use_file==2) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
     this->exFatFile->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     this->exFatFile->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
     this->exFatFile->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
     this->exFatFile->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
     this->exFatFile->print(priorityString(pri));
     this->exFatFile->print(' ');
     this->exFatFile->print(this->_deviceHostname);
@@ -528,18 +528,18 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
     this->exFatFile->flush();
   }
 //  if (this->use_file==3) {
-//#ifdef OUTPUT_TIME
-//#ifdef USE_RTC
+//#ifdef _SYSLOG_OUTPUT_TIME
+//#ifdef _SYSLOG_USE_RTC
 //    this->sdFsFile->print(this->dateString());
-//#endif /* USE_RTC */
-//#ifdef USE_NTP
+//#endif /* _SYSLOG_USE_RTC */
+//#ifdef _SYSLOG_USE_NTP
 //    this->sdFsFile->print(this->dateNtpString());
-//#endif /* USE_NTP */
-//#if !defined(USE_RTC) && !defined(USE_NTP)
+//#endif /* _SYSLOG_USE_NTP */
+//#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
 //    this->sdFsFile->print(millis());
-//#endif /* not USE_NTP && not USE_RTC */
+//#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
 //    this->sdFsFile->print(' ');
-//#endif /* OUTPUT_TIME */
+//#endif /* _SYSLOG_OUTPUT_TIME */
 //    this->sdFsFile->print(priorityString(pri));
 //    this->sdFsFile->print(' ');
 //    this->sdFsFile->print(this->_deviceHostname);
@@ -550,20 +550,20 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
 //    this->sdFsFile->flush();
 //  }
 }
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
 void Syslog::_sendFile(uint16_t pri, const char *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->logFile->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->logFile->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->logFile->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->logFile->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->logFile->print(priorityString(pri));
   this->logFile->print(' ');
   this->logFile->print(this->_deviceHostname);
@@ -573,24 +573,24 @@ void Syslog::_sendFile(uint16_t pri, const char *message) {
   this->logFile->println(message);
   this->logFile->flush();
 }
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
 void Syslog::_sendHardSerial(uint16_t pri, const char *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.hSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.hSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.hSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.hSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.hSerial->print(priorityString(pri));
   this->channel.hSerial->print(' ');
   this->channel.hSerial->print(this->_deviceHostname);
@@ -603,18 +603,18 @@ void Syslog::_sendHardSerial(uint16_t pri, const char *message) {
 
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
 void Syslog::_sendUsbSerial(uint16_t pri, const char *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel._Serial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel._Serial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel._Serial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel._Serial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel._Serial->print(priorityString(pri));
   this->channel._Serial->print(' ');
   this->channel._Serial->print(this->_deviceHostname);
@@ -627,18 +627,18 @@ void Syslog::_sendUsbSerial(uint16_t pri, const char *message) {
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
 void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.uSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.uSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.uSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.uSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.uSerial->print(priorityString(pri));
   this->channel.uSerial->print(' ');
   this->channel.uSerial->print(this->_deviceHostname);
@@ -650,18 +650,18 @@ void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR */
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
 void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.usbSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.usbSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.usbSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.usbSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.usbSerial->print(priorityString(pri));
   this->channel.usbSerial->print(' ');
   this->channel.usbSerial->print(this->_deviceHostname);
@@ -671,22 +671,22 @@ void Syslog::_sendUartSerial(uint16_t pri, const char *message) {
   this->channel.usbSerial->println(message);
 }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
-#endif /* USE_HARDWARE_SERIAL */
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
 void Syslog::_sendSoftSerial(uint16_t pri, const char *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.sSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.sSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.sSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.sSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.sSerial->print(priorityString(pri));
   this->channel.sSerial->print(' ');
   this->channel.sSerial->print(this->_deviceHostname);
@@ -695,7 +695,7 @@ void Syslog::_sendSoftSerial(uint16_t pri, const char *message) {
   this->channel.sSerial->print(' ');
   this->channel.sSerial->println(message);
 }
-#endif /* USE_SOFTWARE_SERIAL */
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
 
 inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
   bool result=true;
@@ -708,7 +708,7 @@ inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
   if ((pri & LOG_FACMASK) == 0)
     pri = LOG_MAKEPRI(LOG_FAC(this->_priDefault), pri);
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
   if (this->use_protocol) {
     if ((this->_server == NULL && this->_ip == INADDR_NONE) || this->_port == 0) {
       result=false;
@@ -716,21 +716,21 @@ inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
       if (!(this->_sendProtocol(pri, message))) result=false;
     }
   }
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
   if (this->use_file!=-1) {
     this->_sendFile(pri, message);
   }
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
   if (this->use_file) {
     this->_sendFile(pri, message);
   }
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
   if (TYPE_HARDWARE_SERIAL==this->use_serial) {
@@ -756,18 +756,18 @@ inline bool Syslog::_sendLog(uint16_t pri, const char *message) {
   }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 
-#endif /* USE_HARDWARE_SERIAL */
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
   if (TYPE_SOFTWARE_SERIAL==this->use_serial) {
     this->_sendSoftSerial(pri, message);
   }
-#endif /* USE_SOFTWARE_SERIAL */
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
 
   return result;
 }
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
 bool Syslog::_sendProtocol(uint16_t pri, const __FlashStringHelper *message) {
   int result;
   if (this->_server != NULL) {
@@ -796,42 +796,42 @@ bool Syslog::_sendProtocol(uint16_t pri, const __FlashStringHelper *message) {
   } else {
     this->_client->print(F("[0]: "));
   }
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->_client->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->_client->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->_client->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->_client->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
 
   this->_client->print(message);
   this->_client->endPacket();
 
   return true;
 }
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
 void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
   if (this->use_file==0) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
     this->fatFile->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     this->fatFile->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
     this->fatFile->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
     this->fatFile->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
     this->fatFile->print(priorityString(pri));
     this->fatFile->print(' ');
     this->fatFile->print(this->_deviceHostname);
@@ -842,18 +842,18 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
     this->fatFile->flush();
   }
   if (this->use_file==1) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
     this->fat32File->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     this->fat32File->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
     this->fat32File->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
     this->fat32File->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
     this->fat32File->print(priorityString(pri));
     this->fat32File->print(' ');
     this->fat32File->print(this->_deviceHostname);
@@ -864,18 +864,18 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
     this->fat32File->flush();
   }
   if (this->use_file==2) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
     this->exFatFile->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     this->exFatFile->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
     this->exFatFile->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
     this->exFatFile->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
     this->exFatFile->print(priorityString(pri));
     this->exFatFile->print(' ');
     this->exFatFile->print(this->_deviceHostname);
@@ -886,18 +886,18 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
     this->exFatFile->flush();
   }
 //  if (this->use_file==3) {
-//#ifdef OUTPUT_TIME
-//#ifdef USE_RTC
+//#ifdef _SYSLOG_OUTPUT_TIME
+//#ifdef _SYSLOG_USE_RTC
 //    this->sdFsFile->print(this->dateString());
-//#endif /* USE_RTC */
-//#ifdef USE_NTP
+//#endif /* _SYSLOG_USE_RTC */
+//#ifdef _SYSLOG_USE_NTP
 //    this->sdFsFile->print(this->dateNtpString());
-//#endif /* USE_NTP */
-//#if !defined(USE_RTC) && !defined(USE_NTP)
+//#endif /* _SYSLOG_USE_NTP */
+//#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
 //    this->sdFsFile->print(millis());
-//#endif /* not USE_NTP && not USE_RTC */
+//#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
 //    this->sdFsFile->print(' ');
-//#endif /* OUTPUT_TIME */
+//#endif /* _SYSLOG_OUTPUT_TIME */
 //    this->sdFsFile->print(priorityString(pri));
 //    this->sdFsFile->print(' ');
 //    this->sdFsFile->print(this->_deviceHostname);
@@ -908,20 +908,20 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
 //    this->sdFsFile->flush();
 //  }
 }
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
 void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->logFile->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->logFile->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->logFile->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->logFile->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->logFile->print(priorityString(pri));
   this->logFile->print(' ');
   this->logFile->print(this->_deviceHostname);
@@ -931,24 +931,24 @@ void Syslog::_sendFile(uint16_t pri, const __FlashStringHelper *message) {
   this->logFile->println(message);
   this->logFile->flush();
 }
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
 void Syslog::_sendHardSerial(uint16_t pri, const __FlashStringHelper *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.hSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.hSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.hSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.hSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.hSerial->print(priorityString(pri));
   this->channel.hSerial->print(' ');
   this->channel.hSerial->print(this->_deviceHostname);
@@ -961,18 +961,18 @@ void Syslog::_sendHardSerial(uint16_t pri, const __FlashStringHelper *message) {
 
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_NORMAL && HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_USBCDC
 void Syslog::_sendUsbSerial(uint16_t pri, const __FlashStringHelper *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel._Serial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel._Serial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel._Serial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel._Serial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel._Serial->print(priorityString(pri));
   this->channel._Serial->print(' ');
   this->channel._Serial->print(this->_deviceHostname);
@@ -985,18 +985,18 @@ void Syslog::_sendUsbSerial(uint16_t pri, const __FlashStringHelper *message) {
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
 void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel._Serial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.uSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.uSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel._Serial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.uSerial->print(priorityString(pri));
   this->channel.uSerial->print(' ');
   this->channel.uSerial->print(this->_deviceHostname);
@@ -1009,18 +1009,18 @@ void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
 void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.usbSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.usbSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.usbSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.usbSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.usbSerial->print(priorityString(pri));
   this->channel.usbSerial->print(' ');
   this->channel.usbSerial->print(this->_deviceHostname);
@@ -1031,22 +1031,22 @@ void Syslog::_sendUartSerial(uint16_t pri, const __FlashStringHelper *message) {
 }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
 
-#endif /* USE_HARDWARE_SERIAL */
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
 void Syslog::_sendSoftSerial(uint16_t pri, const __FlashStringHelper *message) {
-#ifdef OUTPUT_TIME
-#ifdef USE_RTC
+#ifdef _SYSLOG_OUTPUT_TIME
+#ifdef _SYSLOG_USE_RTC
   this->channel.sSerial->print(this->dateString());
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
   this->channel.sSerial->print(this->dateNtpString());
-#endif /* USE_NTP */
-#if !defined(USE_RTC) && !defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if !defined(_SYSLOG_USE_RTC) && !defined(_SYSLOG_USE_NTP)
   this->channel.sSerial->print(millis());
-#endif /* not USE_NTP && not USE_RTC */
+#endif /* not _SYSLOG_USE_NTP && not _SYSLOG_USE_RTC */
   this->channel.sSerial->print(' ');
-#endif /* OUTPUT_TIME */
+#endif /* _SYSLOG_OUTPUT_TIME */
   this->channel.sSerial->print(priorityString(pri));
   this->channel.sSerial->print(' ');
   this->channel.sSerial->print(this->_deviceHostname);
@@ -1055,7 +1055,7 @@ void Syslog::_sendSoftSerial(uint16_t pri, const __FlashStringHelper *message) {
   this->channel.sSerial->print(' ');
   this->channel.sSerial->println(message);
 }
-#endif /* USE_SOFTWARE_SERIAL */
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
 
 inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
   bool result=true;
@@ -1068,7 +1068,7 @@ inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
   if ((pri & LOG_FACMASK) == 0)
     pri = LOG_MAKEPRI(LOG_FAC(this->_priDefault), pri);
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
   if (this->use_protocol) {
     if ((this->_server == NULL && this->_ip == INADDR_NONE) || this->_port == 0) {
       result=false;
@@ -1076,21 +1076,21 @@ inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
       if (!(this->_sendProtocol(pri, message))) result=false;
     }
   }
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
   if (this->use_file!=-1) {
     this->_sendFile(pri, message);
   }
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
   if (this->use_file) {
     this->_sendFile(pri, message);
   }
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
   if (TYPE_HARDWARE_SERIAL==this->use_serial) {
@@ -1115,13 +1115,13 @@ inline bool Syslog::_sendLog(uint16_t pri, const __FlashStringHelper *message) {
     this->_sendUartSerial(pri, message);
   }
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
-#endif /* USE_HARDWARE_SERIAL */
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
   if (TYPE_SOFTWARE_SERIAL==this->use_serial) {
     this->_sendSoftSerial(pri, message);
   }
-#endif /* USE_SOFTWARE_SERIAL */
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
 
   return result;
 }

@@ -1,7 +1,8 @@
 #ifndef SYSLOG_H
 #define SYSLOG_H 
 
-#include "config.h"
+
+#include "syslog_config.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,35 +13,35 @@
 #include <detectArduinoHardware.h>
 #include <dateUtils.h>
 
-#ifdef USE_RTC
+#ifdef _SYSLOG_USE_RTC
 #include <RTC_U.h>
-#endif /* USE_RTC */
+#endif /* _SYSLOG_USE_RTC */
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
 #include <IPAddress.h>
 #include <Udp.h>
 #endif
 
-#ifdef USE_NTP
+#ifdef _SYSLOG_USE_NTP
 #include <NTPClient.h>
 #endif
 
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
 //#ifndef INCLUDE_SDIOS
 //#define INCLUDE_SDIOS 1
 //#endif  // INCLUDE_SDIOS
 #include <SdFat.h>
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
 #include <SD.h>
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
 #include <SoftwareSerial.h>
 #endif
 
-#if defined(USE_HARDWARE_SERIAL) || defined(USE_SOFTWARE_SERIAL)
+#if defined(_SYSLOG_USE_HARDWARE_SERIAL) || defined(_SYSLOG_USE_SOFTWARE_SERIAL)
 #define USE_SERIAL
 #endif
 
@@ -127,7 +128,7 @@
 
 #ifdef USE_SERIAL
 union Channel {
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_MKR
   Uart   *uSerial;
@@ -147,7 +148,7 @@ union Channel {
 
 #endif
 
-#ifdef USE_SOFTWARE_SERIAL
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
   SoftwareSerial *sSerial;
 #endif
 };
@@ -159,26 +160,26 @@ class Syslog {
     const char* _appName;
     uint16_t _priDefault;
     uint8_t _priMask = 0xff;
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
     UDP* _client;
     uint8_t _protocol;
     IPAddress _ip;
     const char* _server;
     uint16_t _port;
     bool use_protocol;
-#endif /* USE_NETWORK */
-#ifdef USE_FILE
-#ifdef USE_SD_FAT
+#endif /* _SYSLOG_USE_NETWORK */
+#ifdef _SYSLOG_USE_FILE
+#ifdef _SYSLOG_USE_SD_FAT
     int use_file;  // -1 not use , 0 fat , 1 fat32,  2 exfat , 3 sdfs
     File *fatFile;
     File32 *fat32File;
     ExFile *exFatFile;
     //FsFile *sdFsFile;
-#else /* USE_SD_FAT */
+#else /* _SYSLOG_USE_SD_FAT */
     bool use_file;
     File *logFile;
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
 #ifdef USE_SERIAL
     uint8_t use_serial; // 0 使用しない, 1 ハードシリアル, 2 ソフトシリアル
     union Channel channel;
@@ -186,16 +187,16 @@ class Syslog {
 
     bool _sendLog(uint16_t pri, const char *message);
     bool _sendLog(uint16_t pri, const __FlashStringHelper *message);
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
     bool _sendProtocol(uint16_t pri, const char *message);
     bool _sendProtocol(uint16_t pri, const __FlashStringHelper *message);
-#endif /* USE_NETWORK */
-#ifdef USE_FILE
+#endif /* _SYSLOG_USE_NETWORK */
+#ifdef _SYSLOG_USE_FILE
     void _sendFile(uint16_t pri, const char *message);
     void _sendFile(uint16_t pri, const __FlashStringHelper *message);
-#endif /* USE_FILE */
+#endif /* _SYSLOG_USE_FILE */
 
-#ifdef USE_HARDWARE_SERIAL
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
     void _sendHardSerial(uint16_t pri, const char *message);
     void _sendHardSerial(uint16_t pri, const __FlashStringHelper *message);
@@ -212,47 +213,47 @@ class Syslog {
     void _sendUartSerial(uint16_t pri, const char *message);
     void _sendUartSerial(uint16_t pri, const __FlashStringHelper *message);
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
-#endif /* USE_HARDWARE_SERIAL */
-#ifdef USE_SOFTWARE_SERIAL
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
     void _sendSoftSerial(uint16_t pri, const char *message);
     void _sendSoftSerial(uint16_t pri, const __FlashStringHelper *message);
-#endif /* USE_SOFTWARE_SERIAL */
-#if defined(USE_FILE) || defined(USE_SERIAL)
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
+#if defined(_SYSLOG_USE_FILE) || defined(USE_SERIAL)
     String priorityString(uint16_t pri);
-#endif /* USE_FILE || USE_SERIAL */
-#ifdef USE_RTC
+#endif /* _SYSLOG_USE_FILE || USE_SERIAL */
+#ifdef _SYSLOG_USE_RTC
     RTC_Unified *rtc;
     String dateString(void);
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     NTPClient *ntpClient;
-#endif /* USE_NTP */
-#if defined(USE_RTC) || defined(USE_NTP)
+#endif /* _SYSLOG_USE_NTP */
+#if defined(_SYSLOG_USE_RTC) || defined(_SYSLOG_USE_NTP)
     uint8_t time_format;
-#endif /* USE_RTC || USE_NTP */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC || _SYSLOG_USE_NTP */
+#ifdef _SYSLOG_USE_NTP
     String dateNtpString(void);
-#endif /* USE_NTP */
+#endif /* _SYSLOG_USE_NTP */
 
   public:
     Syslog(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
     void SetLogInfo(const char* deviceHostname = SYSLOG_NILVALUE, const char* appName = SYSLOG_NILVALUE, uint16_t priDefault = LOG_KERN);
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
     void SetProtocol(UDP &client, uint8_t protocol = SYSLOG_PROTO_IETF);
     void SetProtocol(UDP &client, const char* server, uint16_t port, uint8_t protocol = SYSLOG_PROTO_IETF);
     void SetProtocol(UDP &client, IPAddress ip, uint16_t port, uint8_t protocol = SYSLOG_PROTO_IETF);
     void UnsetProtocol(void);
-#endif /* USE_NETWORK */
-#ifdef USE_FILE
+#endif /* _SYSLOG_USE_NETWORK */
+#ifdef _SYSLOG_USE_FILE
     bool SetFile(File *file);
     void UnsetFile(void);
-#ifdef USE_SD_FAT
+#ifdef _SYSLOG_USE_SD_FAT
     bool SetFile(File32 *file);
     bool SetFile(ExFile *file);
     //bool SetFile(FsFile *file);
-#endif /* USE_SD_FAT */
-#endif /* USE_FILE */
-#ifdef USE_HARDWARE_SERIAL
+#endif /* _SYSLOG_USE_SD_FAT */
+#endif /* _SYSLOG_USE_FILE */
+#ifdef _SYSLOG_USE_HARDWARE_SERIAL
 #if HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR
     void SetSerial(HardwareSerial *serial);
 #endif /* HARDWARE_SERIAL_TYPE!=SERIAL_TYPE_MKR */
@@ -265,18 +266,18 @@ class Syslog {
 #if HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC
     void SetSerial(USBCDC *serial);
 #endif /* HARDWARE_SERIAL_TYPE==SERIAL_TYPE_USBCDC */
-#endif /* USE_HARDWARE_SERIAL */
-#ifdef USE_SOFTWARE_SERIAL
+#endif /* _SYSLOG_USE_HARDWARE_SERIAL */
+#ifdef _SYSLOG_USE_SOFTWARE_SERIAL
     void SetSerial(SoftwareSerial *serial);
-#endif /* USE_SOFTWARE_SERIAL */
+#endif /* _SYSLOG_USE_SOFTWARE_SERIAL */
 #ifdef USE_SERIAL
     void UnsetSerial(void);
 #endif /* USE_SERIAL */
 
-#ifdef USE_NETWORK
+#ifdef _SYSLOG_USE_NETWORK
     Syslog &server(const char* server, uint16_t port);
     Syslog &server(IPAddress ip, uint16_t port);
-#endif /* USE_NETWORK */
+#endif /* _SYSLOG_USE_NETWORK */
     Syslog &deviceHostname(const char* deviceHostname);
     Syslog &appName(const char* appName);
     Syslog &defaultPriority(uint16_t pri = LOG_KERN);
@@ -299,12 +300,12 @@ class Syslog {
     bool log(const __FlashStringHelper *message);
     bool log(const String &message);
     bool log(const char *message);
-#ifdef USE_RTC
+#ifdef _SYSLOG_USE_RTC
     bool SetRtc(RTC_Unified *rtc, uint8_t format);
-#endif /* USE_RTC */
-#ifdef USE_NTP
+#endif /* _SYSLOG_USE_RTC */
+#ifdef _SYSLOG_USE_NTP
     bool SetNTP(NTPClient *client, uint8_t format);
-#endif /* USE_NTP */
+#endif /* _SYSLOG_USE_NTP */
 };
 
 #endif
